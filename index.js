@@ -8,7 +8,7 @@ client.once('ready', () => {
 });
 
 client.on("messageCreate", async (message) => {
-     if (message.author.bot) return false; 
+    if (message.author.bot) return false; 
     if (message.content.toLowerCase() == "!akochan") {
         let user = message.author;
         let game = require("./akochans/akochan-1.json");
@@ -26,13 +26,23 @@ client.on("messageCreate", async (message) => {
             message.reply(`Times up!.\n`
                 + `The best discards were: ${game.bestDiscards}\n`
                 + `Their EVs were: ${game.evs}`);
-      } else {
-            answer.first().reply(`You said ${answer.first()}.\n`
+        } else {
+            let ranking = game.bestDiscards.indexOf(answer.first().content);
+            console.log(answer.first().content);
+            console.log(ranking);
+            let responseIntro = `You said ${answer.first().content}. `;
+            if (ranking > -1) {
+                if (ranking === 0) {
+                    responseIntro = responseIntro + `That was the best discard! You earned 5 akocoins!`;
+                } else {
+                    responseIntro = responseIntro + `That was the number ${ranking + 1} discard! You earned ${5 - ranking} akocoins!`;
+                }
+            }
+            answer.first().reply(`${responseIntro}\n`
                 + `The best discards were: ${game.bestDiscards}\n`
                 + `Their EVs were: ${game.evs}`);
-      }
-  }
-  console.log(`Message from ${message.author.username}: ${message.content}`);
+        }
+    }
 });
 
 client.login(config.token);
