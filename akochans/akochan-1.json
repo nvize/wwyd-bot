@@ -5,6 +5,7 @@
 	"repeats": 1,
 	"honba": 0,
 	"points": [ 28900, 34000, 22700, 14400 ],
+	"tilesLeft": 14,
 	"hand": [ "3m", "9m", "2p", "4p", "6p", "9p", "1s", "1s", "5s", "0s", "1z", "5z", "5z", "5p" ],
 	"eastDiscards": [ "8m", "4m", "3z", "r0p", "7m", "3s", "1s", "9s", "7s", "1m" ],
 	"eastCalls": [ ],
