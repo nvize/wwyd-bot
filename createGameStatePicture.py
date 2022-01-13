@@ -43,7 +43,6 @@ def createTileCalls(tileCalls):
                     index = index + 5
                     leftSide = leftSide + tile_height
                 elif call[index] in ["c", "k", "p"] and not index == 6:
-                    print("pons")
                     tile = tileDict[call[index+1:index+3]]
                     rotatedTile = tile.rotate(270,expand=True)
                     callImage.paste(rotatedTile, (leftSide, 2 * tile_height - tile_width, leftSide + tile_height, tile_height * 2))
@@ -81,19 +80,18 @@ def createTileGroup(tiles, rowSize):
         
     return tilePic
 
-#filePath = 0
-filePath = 'akochans/akochan-1.json' #testing line
-#try:
-#    filePath = sys.argv[1]
-#except:
-#    print("MISSING_FILE")
+filePath = 0
+#filePath = 'akochans/akochan-1.json' #testing line
+try:
+    filePath = sys.argv[1]
+except:
+    print("MISSING_FILE")
 
 gameFile = open(filePath)
 game = json.load(gameFile)
 
 eastDiscardsImage = createTileGroup(game["eastDiscards"], 6)
 southCallsImage = createTileCalls(game["southCalls"])
-print(game["southCalls"])
     
 base64image = convertToBase64(southCallsImage)
 
