@@ -1,6 +1,5 @@
 from PIL import Image
 import json
-import os
 import base64
 from io import BytesIO
 import sys
@@ -19,31 +18,46 @@ for index, name in enumerate(tile_names):
     tileDict[name] = tile_images.crop(((index % 10) * tile_width, (index // 10) * tile_height, 
                                       (index % 10 + 1) * tile_width, (index // 10 + 1) * tile_height))
 
-def createGameStatePicture(filePath):
-    gameFile = open(filePath)
-    game = json.load(gameFile)
-    
-    hand = game['hand']
-    handPic = Image.new("RGBA", (tile_width * 14, tile_height), (0, 0, 0, 0))
-    
-    for index, tile in enumerate(hand):
-        region = (index*tile_width, 0, (index+1)*tile_width, tile_height)
-        handPic.paste(tileDict[tile], region)
-        
+def convertToBase64(image):
     outputBuffer = BytesIO()
-    handPic.save(outputBuffer, format='PNG')
+    image.save(outputBuffer, format='PNG')
     bgBase64Data = outputBuffer.getvalue()
     
     return base64.b64encode(bgBase64Data).decode()
 
-a = 0
-#a = 'akochans/akochan-1.json' #testing line
-try:
-  a = sys.argv[1]
-except:
-  print("DATA_MISSING")
-
-base64image = createGameStatePicture(a)
+def createTileGroup(tiles, rowSize):
+    numOfRows = -(len(tiles) // -rowSize)
+    tilePic = Image.new("RGBA", (tile_width * rowSize + (tile_height - tile_width), tile_height * numOfRows), (0, 0, 0, 0))
     
+    riichiOffset = 0
+    for index, tile in enumerate(tiles):
+        if tile[0] == 'r':
+            riichiTile = tileDict[tile[1:3]]
+            rotatedTile = riichiTile.rotate(270,expand=True)
+            tilePic.paste(rotatedTile, ((index % rowSize) * tile_width, (index // rowSize) * tile_height + (tile_height - tile_width), 
+                                      (index % rowSize + 1) * tile_width + (tile_height - tile_width), (index // rowSize + 1) * tile_height))
+            riichiOffset =  tile_height - tile_width
+        else:
+            if index % rowSize == 0:
+                riichiOffset = 0
+            tilePic.paste(tileDict[tile], ((index % rowSize) * tile_width + riichiOffset, (index // rowSize) * tile_height, 
+                                      (index % rowSize + 1) * tile_width + riichiOffset, (index // rowSize + 1) * tile_height))
+        
+    return tilePic
+
+#filePath = 0
+filePath = 'akochans/akochan-1.json' #testing line
+#try:
+#    filePath = sys.argv[1]
+#except:
+#    print("MISSING_FILE")
+
+gameFile = open(filePath)
+game = json.load(gameFile)
+
+southDiscardsImage = createTileGroup(game["eastDiscards"], 5)
+    
+base64image = convertToBase64(southDiscardsImage)
+
 print(base64image)
 sys.stdout.flush()
