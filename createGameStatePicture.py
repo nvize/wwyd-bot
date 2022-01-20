@@ -1,4 +1,4 @@
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import json
 import base64
 from io import BytesIO
@@ -26,35 +26,35 @@ def convertToBase64(image):
     return base64.b64encode(bgBase64Data).decode()
 
 def createTileCalls(tileCalls):
-    callImage = Image.new("RGBA", (len(tileCalls) * tile_width * 4 + (tile_height - tile_width), tile_height * 2), (0, 0, 0, 0))
+    callImage = Image.new("RGBA", (len(tileCalls) * (tile_width * 4 + (tile_height - tile_width)), tile_width * 2), (0, 0, 0, 0))
 
     leftSide = 0
     for call in tileCalls:
         index = 0
         while index < len(call):
             if call[index] in ["a", "c", "k", "p"]:
-                if call[index] == "a":
+                if call[index] == "a": # shouminkan (2 sideways tiles stacked vertically)
                     tile = tileDict[call[index+1:index+3]]
                     rotatedTile = tile.rotate(270,expand=True)
                     addedKan = Image.new("RGBA", (tile_height, tile_width * 2), (0, 0, 0, 0))
                     addedKan.paste(rotatedTile, (0, 0, tile_height, tile_width))
                     addedKan.paste(rotatedTile, (0, tile_width, tile_height, tile_width * 2))
-                    callImage.paste(addedKan, (leftSide, (tile_height - tile_width)*2, leftSide + tile_height, tile_height * 2))
+                    callImage.paste(addedKan, (leftSide, 0, leftSide + tile_height, tile_width * 2))
                     index = index + 5
                     leftSide = leftSide + tile_height
-                elif call[index] in ["c", "k", "p"] and not index == 6:
+                elif call[index] in ["c", "k", "p"] and not index == 6: # pon, chii, daiminkan
                     tile = tileDict[call[index+1:index+3]]
                     rotatedTile = tile.rotate(270,expand=True)
-                    callImage.paste(rotatedTile, (leftSide, 2 * tile_height - tile_width, leftSide + tile_height, tile_height * 2))
+                    callImage.paste(rotatedTile, (leftSide, tile_width, leftSide + tile_height, tile_width * 2))
                     index = index + 3
                     leftSide = leftSide + tile_height
-                elif call[index] == "k" and index == 6:
-                    callImage.paste(tileDict["ct"], (leftSide, tile_height, leftSide + tile_width, tile_height * 2))
+                elif call[index] == "k" and index == 6: # ankan
+                    callImage.paste(tileDict["ct"], (leftSide, tile_width * 2 - tile_height, leftSide + tile_width, tile_width * 2))
                     callImage.paste(tileDict["ct"], (0, tile_height, tile_width, tile_height * 2))
                     index = index + 3
                     leftSide = leftSide + tile_width
-            else:
-                callImage.paste(tileDict[call[index:index+2]], (leftSide, tile_height, leftSide + tile_width, tile_height * 2))
+            else: # noncalled tile
+                callImage.paste(tileDict[call[index:index+2]], (leftSide, tile_width * 2 - tile_height, leftSide + tile_width, tile_width * 2))
                 index = index + 2
                 leftSide = leftSide + tile_width
 
@@ -80,20 +80,46 @@ def createTileGroup(tiles, rowSize):
         
     return tilePic
 
-filePath = 0
-#filePath = 'akochans/akochan-1.json' #testing line
-try:
-    filePath = sys.argv[1]
-except:
-    print("MISSING_FILE")
+#filePath = 0
+filePath = 'akochans/akochan-1.json' #testing line
+#try:
+#    filePath = sys.argv[1]
+#except:
+#    print("MISSING_FILE")
 
 gameFile = open(filePath)
 game = json.load(gameFile)
 
+gameImage = Image.new("RGBA", (8*tile_height+6*tile_width, 8*tile_height+6*tile_width), (0, 0, 0, 0))
+boardImage = Image.new("RGBA", (6*tile_height+6*tile_width, 6*tile_height+6*tile_width), (0, 0, 0, 0))
+
+handImage = createTileGroup(game["hand"], 14)
 eastDiscardsImage = createTileGroup(game["eastDiscards"], 6)
+eastCallsImage = createTileCalls(game["eastCalls"])
+southDiscardsImage = createTileGroup(game["southDiscards"], 6)
 southCallsImage = createTileCalls(game["southCalls"])
-    
-base64image = convertToBase64(southCallsImage)
+westDiscardsImage = createTileGroup(game["westDiscards"], 6)
+westCallsImage = createTileCalls(game["westCalls"])
+northDiscardsImage = createTileGroup(game["northDiscards"], 6)
+northCallsImage = createTileCalls(game["northCalls"])
+
+boardImage.paste(eastDiscardsImage, (4*tile_height, 2*tile_height+6*tile_width, 4*tile_height+eastDiscardsImage.size[0], 2*tile_height+6*tile_width+eastDiscardsImage.size[1]))
+boardImage = boardImage.rotate(90)
+boardImage.paste(southDiscardsImage, (4*tile_height, 2*tile_height+6*tile_width, 4*tile_height+southDiscardsImage.size[0], 2*tile_height+6*tile_width+southDiscardsImage.size[1]))
+boardImage = boardImage.rotate(90)
+boardImage.paste(westDiscardsImage, (4*tile_height, 2*tile_height+6*tile_width, 4*tile_height+westDiscardsImage.size[0], 2*tile_height+6*tile_width+westDiscardsImage.size[1]))
+boardImage = boardImage.rotate(90)
+boardImage.paste(northDiscardsImage, (4*tile_height, 2*tile_height+6*tile_width, 4*tile_height+northDiscardsImage.size[0], 2*tile_height+6*tile_width+northDiscardsImage.size[1]))
+
+if game["seat"] == "east":
+    boardImage = boardImage.rotate(90)
+elif game["seat"] == "south":
+    boardImage = boardImage.rotate(180)
+elif game["seat"] == "west":
+    boardImage = boardImage.rotate(270)
+#boardImage.paste(handImage, ((8*tile_height-8*tile_width)//2, 8*tile_height+6*tile_width, (8*tile_height-8*tile_width)//2+handImage.size[0], 9*tile_height+6*tile_width))
+
+base64image = convertToBase64(boardImage)
 
 print(base64image)
 sys.stdout.flush()
