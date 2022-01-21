@@ -30,15 +30,7 @@ client.on("messageCreate", async (message) => {
 
         async function whateves(gameImageBase64) {
             let sfbuff = new Buffer.from(gameImageBase64, 'base64');
-            await message.reply({ content: 'lol', files: [{ attachment: sfbuff }] });
-            message.reply(`Puzzle name: ${game.name}\n`
-                + `You are ${game.seat}.\n`
-                + `East discards: ${game.eastDiscards}, East calls: ${game.eastCalls}\n`
-                + `South discards: ${game.southDiscards}, South calls: ${game.southCalls}\n`
-                + `West discards: ${game.westDiscards}, West calls: ${game.westCalls}\n`
-                + `North discards: ${game.northDiscards}, North calls: ${game.northCalls}\n`
-                + `Your hand: ${game.hand}, Dora indicator: ${game.doraInd}\n`
-                + `WWYD? You have 30 seconds to answer!`);
+            await message.reply({ content: `Puzzle name: ${game.name}. You are ${game.seat}. Dora indicator: ${game.doraInd}. WWYD? You have 30 seconds to answer!`, files: [{ attachment: sfbuff }] });
             let filter = m => m.author === user;
             let answer = await message.channel.awaitMessages({ filter, max: 1, time: 30_000 });
             if (answer.size < 1) {
