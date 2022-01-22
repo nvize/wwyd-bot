@@ -1,5 +1,6 @@
 const { Client, Intents } = require('discord.js');
 const Discord = require('discord.js');
+const { MessageActionRow, MessageButton } = require('discord.js');
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 const config = require('./config.json');
 const spawn = require("child_process").spawn;
@@ -30,7 +31,18 @@ client.on("messageCreate", async (message) => {
 
         async function whateves(gameImageBase64) {
             let sfbuff = new Buffer.from(gameImageBase64, 'base64');
-            await message.reply({ content: `Puzzle name: ${game.name}. You are ${game.seat}. Dora indicator: ${game.doraInd}. WWYD? You have 30 seconds to answer!`, files: [{ attachment: sfbuff }] });
+            let rows = [];
+            for (let x in game.hand) {
+                if (x % 5 == 0)
+                    rows.push(new MessageActionRow())
+                rows[Math.floor(x/5)].addComponents(
+                    new MessageButton()
+					.setCustomId(x)
+					.setLabel(game.hand[x])
+					.setStyle('PRIMARY')
+                );
+            }
+            await message.reply({ content: `Puzzle name: ${game.name}. You are ${game.seat}. Dora indicator: ${game.doraInd}. WWYD? You have 30 seconds to answer!`, files: [{ attachment: sfbuff }], components:[rows[0], rows[1], rows[2]] });
             let filter = m => m.author === user;
             let answer = await message.channel.awaitMessages({ filter, max: 1, time: 30_000 });
             if (answer.size < 1) {
