@@ -42,18 +42,24 @@ client.on("messageCreate", async (message) => {
 					.setStyle('PRIMARY')
                 );
             }
-            await message.reply({ content: `Puzzle name: ${game.name}. You are ${game.seat}. Dora indicator: ${game.doraInd}. WWYD? You have 30 seconds to answer!`, files: [{ attachment: sfbuff }], components:[rows[0], rows[1], rows[2]] });
-            let filter = m => m.author === user;
-            let answer = await message.channel.awaitMessages({ filter, max: 1, time: 30_000 });
-            if (answer.size < 1) {
+            let problemReply = await message.reply({ content: `Puzzle name: ${game.name}. You are ${game.seat}. Dora indicator: ${game.doraInd}. WWYD? You have 30 seconds to answer!`, files: [{ attachment: sfbuff }], components:[rows[0], rows[1], rows[2]] });
+            const filter = i => {
+                i.deferUpdate();
+                return i.user === user;
+            };
+            let answer = await message.channel.awaitMessageComponent({ filter, componentType: 'BUTTON', max: 1, time: 30_000 })
+                .catch(err => console.log(`No interactions were collected.`));
+            rows.forEach(row => row.components.forEach(button => button.setDisabled(true)))
+            problemReply.edit({ content: `Puzzle name: ${game.name}. You are ${game.seat}. Dora indicator: ${game.doraInd}. WWYD? You have 30 seconds to answer!`, files: [{ attachment: sfbuff }], components:[rows[0], rows[1], rows[2]] });
+            if (answer == null) {
                 message.reply(`Times up!.\n`
                     + `The best discards were: ${game.bestDiscards}\n`
                     + `Their EVs were: ${game.evs}`);
             } else {
-                let ranking = game.bestDiscards.indexOf(answer.first().content);
-                console.log(answer.first().content);
+                let ranking = game.bestDiscards.indexOf(answer.component.label);
+                console.log(answer.component.label);
                 console.log(ranking);
-                let responseIntro = `You said ${answer.first().content}. `;
+                let responseIntro = `You said ${answer.component.label}. `;
                 if (ranking > -1) {
                     if (ranking === 0) {
                         responseIntro = responseIntro + `That was the best discard! You earned 5 akocoins!`;
@@ -63,10 +69,10 @@ client.on("messageCreate", async (message) => {
                         responseIntro = responseIntro + `That was the number ${ranking + 1} discard! You earned ${5 - ranking} akocoins!`;
                     }
                 }
-                answer.first().reply(`${responseIntro}\n`
+                message.reply(`${responseIntro}\n`
                     + `The best discards were: ${game.bestDiscards}\n`
                     + `Their EVs were: ${game.evs}`);
-            }
+            }            
         }
     }
 });
