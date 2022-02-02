@@ -109,7 +109,7 @@ if test == 0:
     except:
         print("MISSING_FILE! mark for testing?")
 else:
-    filePath = 'akochans/akochan-3.json' #testing line
+    filePath = 'akochans/akochan-1.json' #testing line
 
 gameFile = open(filePath)
 game = json.load(gameFile)
@@ -117,48 +117,42 @@ game = json.load(gameFile)
 tilePadding = math.floor(tile_height*0.2)
 boardImage = Image.new("RGBA", (8*tile_height + 11*tile_width + 3*tilePadding, 8*tile_height + 11*tile_width + 3*tilePadding), (0, 0, 0, 0))
 
-winds = ["east", "south", "north", "west"]
+winds = ["east", "south", "west", "north"]
 
 handImage = createTileGroup(game["hand"], 14)
 
 discardImages = {}
-discardImages["east"] = createTileGroup(game["eastDiscards"], 6)
-discardImages["south"] = createTileGroup(game["southDiscards"], 6)
-discardImages["west"] = createTileGroup(game["westDiscards"], 6)
-discardImages["north"] = createTileGroup(game["northDiscards"], 6)
-
 callImages = {}
-callImages["east"] = createTileCalls(game["eastCalls"])
-callImages["south"] = createTileCalls(game["southCalls"])
-callImages["west"] = createTileCalls(game["westCalls"])
-callImages["north"] = createTileCalls(game["northCalls"])
+for wind in winds:
+    discardImages[wind] = createTileGroup(game[wind + "Discards"], 6)
+    callImages[wind] = createTileCalls(game[wind + "Calls"])
 
 discardsLeftSide = 4*tile_width + 4*tile_height + 2*tilePadding
 discardsTopSide = 7*tile_width + 4*tile_height + 2*tilePadding
 for wind in winds:
     boardImage.paste(discardImages[wind], (discardsLeftSide, discardsTopSide, discardsLeftSide+discardImages[wind].size[0], discardsTopSide+discardImages[wind].size[1]))
-    numOfRows = -(len(game[wind + "Discards"]) // -6)
+    numOfRows = max([-(len(game[wind + "Discards"]) // -6), 2])
     boardImage.paste(callImages[wind], (math.floor((boardImage.size[0] - callImages[wind].size[0])/2), discardsTopSide + numOfRows*tile_height + tilePadding, math.floor((boardImage.size[0] - callImages[wind].size[0])/2) + callImages[wind].size[0], discardsTopSide + numOfRows*tile_height + tilePadding + callImages[wind].size[1]))
-    boardImage = boardImage.rotate(90)
+    boardImage = boardImage.rotate(270)
 
-boardLeft = ((4-(-(len(game["northDiscards"]) // -6))) * tile_height) - ((2-(-(len(game["northCalls"]) // -2))) * (tile_width * 2))
-boardBottom = boardImage.size[1] - ((4-(-(len(game["eastDiscards"]) // -6))) * tile_height) - ((2-(-(len(game["eastCalls"]) // -2))) * (tile_width * 2))
-boardRight = boardImage.size[0] - ((4-(-(len(game["southDiscards"]) // -6))) * tile_height) + ((2-(-(len(game["southCalls"]) // -2))) * (tile_width * 2))
-boardTop = ((4-(-(len(game["westDiscards"]) // -6))) * tile_height) + ((2-(-(len(game["westCalls"]) // -2))) * (tile_width * 2))
+boardLeft = ((4-(max([-(len(game["northDiscards"]) // -6), 2]))) * tile_height) + ((2-(-(len(game["northCalls"]) // -2))) * (tile_width * 2))
+boardBottom = boardImage.size[1] - ((4-(max([-(len(game["eastDiscards"]) // -6), 2]))) * tile_height) - ((2-(-(len(game["eastCalls"]) // -2))) * (tile_width * 2))
+boardRight = boardImage.size[0] - ((4-(max([-(len(game["southDiscards"]) // -6), 2]))) * tile_height) - ((2-(-(len(game["southCalls"]) // -2))) * (tile_width * 2))
+boardTop = ((4-(max([-(len(game["westDiscards"]) // -6), 2]))) * tile_height) + ((2-(-(len(game["westCalls"]) // -2))) * (tile_width * 2))
 
-boardLeft = min([boardLeft, (boardImage.size[0] - callImages["north"].size[0])/2, (boardImage.size[0] - callImages["south"].size[0])/2])
-boardRight = max([boardRight, (boardImage.size[0] + callImages["north"].size[0])/2, (boardImage.size[0] + callImages["south"].size[0])/2])
-boardBottom = max([boardBottom, (boardImage.size[0] + callImages["east"].size[0])/2, (boardImage.size[0] + callImages["west"].size[0])/2])
-boardTop = min([boardTop, (boardImage.size[0] - callImages["east"].size[0])/2, (boardImage.size[0] - callImages["west"].size[0])/2])
+boardLeft = min([boardLeft, (boardImage.size[0] - callImages["east"].size[0])/2, (boardImage.size[0] - callImages["west"].size[0])/2])
+boardRight = max([boardRight, (boardImage.size[0] + callImages["east"].size[0])/2, (boardImage.size[0] + callImages["west"].size[0])/2])
+boardBottom = max([boardBottom, (boardImage.size[1] + callImages["south"].size[0])/2, (boardImage.size[1] + callImages["north"].size[0])/2])
+boardTop = min([boardTop, (boardImage.size[1] - callImages["south"].size[0])/2, (boardImage.size[1] - callImages["north"].size[0])/2])
 
-boardImage = boardImage.crop((boardLeft, boardTop, boardRight, boardBottom))
+boardImage = boardImage.crop((boardLeft, boardTop, boardRight , boardBottom))
 
 if game["seat"] == "south":
-    boardImage = boardImage.rotate(90,expand=True)
+    boardImage = boardImage.rotate(270,expand=True)
 elif game["seat"] == "west":
     boardImage = boardImage.rotate(180,expand=True)
 elif game["seat"] == "north":
-    boardImage = boardImage.rotate(270,expand=True)
+    boardImage = boardImage.rotate(90,expand=True)
 
 gameImage = Image.new("RGBA", (max([boardImage.size[0], handImage.size[0]]), boardImage.size[1]+tile_height+tilePadding), (0, 0, 0, 0))
 gameImage.paste(boardImage, (math.floor((gameImage.size[0]-boardImage.size[0])/2), 0, math.floor((gameImage.size[0]+boardImage.size[0])/2), boardImage.size[1]))
