@@ -51,7 +51,7 @@ def createTileCalls(tileCalls):
             leftSide = 0
         while index < len(call):
             if call[index] in ["a", "c", "m", "k", "p"]:
-                if call[index] == "a": # shouminkan (2 sideways tiles stacked vertically)
+                if call[index] == "k": # shouminkan (2 sideways tiles stacked vertically)
                     tile = tileDict[call[index+1:index+3]]
                     rotatedTile = tile.rotate(270,expand=True)
                     addedKan = Image.new("RGBA", (tile_height, tile_width * 2), (0, 0, 0, 0))

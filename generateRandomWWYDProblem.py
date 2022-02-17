@@ -20,11 +20,12 @@ dataFile = open(filePath,encoding='utf-8')
 akochanData = json.load(dataFile)
 
 numOfRounds = createGameStateFromAkochan.getNumOfRounds(akochanData)
-round = random.randint(0, numOfRounds)
-numOfTurns = createGameStateFromAkochan.getNumOfTurns(akochanData, round)
-turn = random.randint(3, numOfTurns)
+kyoku = random.randint(0, numOfRounds)
+numOfTurns = createGameStateFromAkochan.getNumOfTurns(akochanData, kyoku)
+turn = random.randint(4, numOfTurns - 1)
 
-gameStateData = createGameStateFromAkochan.writeWWYDBotJson(akochanData, round, turn, "rand-akochan-wwyd")
+print("before: " + " round:" + str(kyoku) + " turn:" + str(turn))
+gameStateData = createGameStateFromAkochan.writeWWYDBotJson(akochanData, kyoku, turn, "rand-akochan-wwyd")
 jsonLine = ""
 for line in gameStateData:
     jsonLine = jsonLine + line
@@ -33,7 +34,7 @@ game = json.loads(jsonLine)
 name = str(random.randint(1000000000, 9999999999))
 writeFile = open(name + ".json", "w")
 writeFile.write(jsonLine)
-print(name + " round:" + str(round) + " turn:" + str(turn))
+print(name + " round:" + str(kyoku) + " turn:" + str(turn))
 
 base64image = createGameStatePicture.createGameStatePictureFunc(game)
 

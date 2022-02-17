@@ -5,12 +5,22 @@ const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_
 const config = require('./config.json');
 const spawn = require("child_process").spawn;
 const fs = require('fs');
+const mongo = require('./mongo.js')
+const mongoose = require('mongoose')
 
 const akochanProblems = fs.readdirSync('./akochans');
 
 // When the client is ready, run this code (only once)
-client.once('ready', () => {
+client.once('ready', async () => {
     console.log('Ready!');
+
+    await mongo().then((mongoose) => {
+        try {
+            console.log('connected to mongo')
+        } catch {
+            console.log(error)
+        }
+    })
 });
 
 client.on("messageCreate", async (message) => {
@@ -20,7 +30,7 @@ client.on("messageCreate", async (message) => {
         let gameFilepath = `./akochans/${akochanProblems[Math.floor(Math.random() * akochanProblems.length)]}`;
         let game = require(gameFilepath);
         let gameImageBase64 = '';
-        let pythonProcess = spawn('py', ["./createGameStatePicture.py", gameFilepath]);
+        let pythonProcess = spawn('py', ["./createGameStatePicture.py", gameFilepath, "filepath"])
         pythonProcess.stdout.on('data', (data) => {
             gameImageBase64 += data;
         });
@@ -74,7 +84,16 @@ client.on("messageCreate", async (message) => {
                     + `Their EVs were: ${game.evs}`);
             }            
         }
+    } else if (message.content.toLowerCase() == "!test") {
+        
     }
+});
+
+process.on('SIGINT', function() {
+    mongoose.connection.close(function () {
+        console.log('Mongoose disconnected on app termination');
+        process.exit(0);
+    });
 });
 
 client.login(config.token);
