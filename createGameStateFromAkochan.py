@@ -68,11 +68,11 @@ def writeWWYDBotJson(data, kyoku, turn, name):
     if playerWind == "east":
         initWindIndex = int(data['target_actor'])
     elif playerWind == "south":
-        initWindIndex = int(data['target_actor']) + 1
+        initWindIndex = (int(data['target_actor']) + 3) % 4
     elif playerWind == "west":
-        initWindIndex = int(data['target_actor']) + 2
+        initWindIndex = (int(data['target_actor']) + 2) % 4
     elif playerWind == "north":
-        initWindIndex = int(data['target_actor']) + 3
+        initWindIndex = (int(data['target_actor']) + 1) % 4
     addWindIndex = 0
     while addWindIndex < 4:
         windIndex = (initWindIndex + addWindIndex) % 4

@@ -85,7 +85,19 @@ client.on("messageCreate", async (message) => {
             }            
         }
     } else if (message.content.toLowerCase() == "!test") {
-        
+        let pythonProcess = spawn('py', ["./generateRandomWWYDProblem.py", 2])
+        let gameImageBase64 = '';
+        pythonProcess.stdout.on('data', (data) => {
+            gameImageBase64 += data;
+        });
+        pythonProcess.on('close', function (code) {
+            testFunc(gameImageBase64);
+        });
+
+        async function testFunc(gameImageBase64) {
+            let sfbuff = new Buffer.from(gameImageBase64, 'base64');
+            let problemReply = await message.reply({ content: `test`, files: [{ attachment: sfbuff }]});
+        }
     }
 });
 
