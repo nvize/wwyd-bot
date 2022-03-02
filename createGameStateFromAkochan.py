@@ -82,9 +82,9 @@ def writeWWYDBotJson(data, kyoku, turn, name):
 
     numOfKans = 0
     currDiscardWindNum = 0
-    notDealer = 1
-    if playerWind == "east":
-        notDealer = 0
+    notDealer = 0
+    if playerWind == "south":
+        notDealer = 1
     while numOfDiscards[winds[(playerWindNum - 1) % 4]] < turn + notDealer:
 
         currDiscardWind = winds[currDiscardWindNum]
