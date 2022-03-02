@@ -172,7 +172,7 @@ if __name__ == "__main__":
     else:
         game = filePath
 
-    base64image = createGameStatePicture(game)
+    base64image = createGameStatePictureFunc(game)
 
     print(base64image)
     sys.stdout.flush()

@@ -85,7 +85,16 @@ client.on("messageCreate", async (message) => {
             }            
         }
     } else if (message.content.toLowerCase() == "!test") {
-        let pythonProcess = spawn('py', ["./generateRandomWWYDProblem.py", 2])
+        let filePath = "./2_2_2022_Silver_Room_East_akochan.json";
+        let rawFileData = fs.readFileSync(filePath);
+        let fileData = JSON.parse(rawFileData)
+        let numOfRounds = Object.keys(fileData.kyokus).length - 1;
+        let round = Math.floor(Math.random() * numOfRounds);
+        let numOfTurns = fileData.kyokus[round].entries[fileData.kyokus[round].entries.length - 1].junme;
+        let turn =  4 + Math.floor(Math.random() * (numOfTurns - 4));
+        console.log(String(round))
+        console.log(String(turn))
+        let pythonProcess = spawn('py', ["./generateRandomWWYDProblem.py", 1, round, turn])
         let gameImageBase64 = '';
         pythonProcess.stdout.on('data', (data) => {
             gameImageBase64 += data;
@@ -96,7 +105,7 @@ client.on("messageCreate", async (message) => {
 
         async function testFunc(gameImageBase64) {
             let sfbuff = new Buffer.from(gameImageBase64, 'base64');
-            let problemReply = await message.reply({ content: `test`, files: [{ attachment: sfbuff }]});
+            let problemReply = await message.reply({ content: `round: ${round}, turn: ${turn}`, files: [{ attachment: sfbuff }]});
         }
     }
 });

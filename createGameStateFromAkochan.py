@@ -3,9 +3,6 @@
 import argparse
 import json
 import sys
-parser = argparse.ArgumentParser()
-parser.add_argument("filepath", type=str, help="filepath to akochan file")
-args = parser.parse_args()
 
 tenhouTiles = [11, 12, 13, 14, 15, 16, 17, 18, 19, 51, 
                21, 22, 23, 24, 25, 26, 27, 28, 29, 52, 
@@ -85,7 +82,10 @@ def writeWWYDBotJson(data, kyoku, turn, name):
 
     numOfKans = 0
     currDiscardWindNum = 0
-    while numOfDiscards[winds[(playerWindNum - 1) % 4]] < turn:
+    notDealer = 1
+    if playerWind == "east":
+        notDealer = 0
+    while numOfDiscards[winds[(playerWindNum - 1) % 4]] < turn + notDealer:
 
         currDiscardWind = winds[currDiscardWindNum]
         currDiscard = discards[currDiscardWind][numOfDiscards[currDiscardWind]]
@@ -190,6 +190,9 @@ def getNumOfTurns(data, kyoku):
     return data['kyokus'][kyoku]['entries'][-1]['junme']
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("filepath", type=str, help="filepath to akochan file")
+    args = parser.parse_args()
     filepath = args.filepath
     data = 0
     try:
