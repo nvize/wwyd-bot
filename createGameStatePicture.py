@@ -39,42 +39,46 @@ def createTileCalls(tileCalls):
         else:
             tilesInRow2Calls += 3
 
-    callImage = Image.new("RGBA", (max([tilesInRow1Calls, tilesInRow2Calls]) * tile_width + 2 * (tile_height - tile_width), tile_width * 4), (0, 0, 0, 0))
+    callImage = Image.new("RGBA", (max([tilesInRow1Calls, tilesInRow2Calls]) * tile_width + 2 * (tile_height - tile_width), tile_width * (2 * (len(tileCalls) // 3 + 1))), (0, 0, 0, 0))
 
-    leftSide = 0
-    topSide = 0
+    rightSide = callImage.size[0]
+    bottomSide = callImage.size[1]
     callIndex = 0
     for call in tileCalls:
-        index = 0
+        index = len(call) - 1
         if callIndex == 2:
-            topSide = tile_width * 2
-            leftSide = 0
-        while index < len(call):
-            if call[index] in ["a", "c", "m", "k", "p"]:
-                if call[index] == "k": # shouminkan (2 sideways tiles stacked vertically)
-                    tile = tileDict[call[index+1:index+3]]
+            bottomSide = tile_width * 2
+            rightSide = callImage.size[0]
+        while index > -1:
+            if (index > 1 and call[index-2].isalpha() and call[index-3].isalpha()) or (index > 4 and call[index-4] == "k"):
+                if index > 4 and call[index-4] == "k": # shouminkan (2 sideways tiles stacked vertically)
+                    tile = tileDict[call[index-1:index+1]]
                     rotatedTile = tile.rotate(270,expand=True)
                     addedKan = Image.new("RGBA", (tile_height, tile_width * 2), (0, 0, 0, 0))
                     addedKan.paste(rotatedTile, (0, 0, tile_height, tile_width))
                     addedKan.paste(rotatedTile, (0, tile_width, tile_height, tile_width * 2))
-                    callImage.paste(addedKan, (leftSide, topSide, leftSide + tile_height, topSide + tile_width * 2))
-                    index = index + 5
-                    leftSide = leftSide + tile_height
-                elif call[index] in ["c", "m", "p"] and not index == 6: # pon, chii, daiminkan
-                    tile = tileDict[call[index+1:index+3]]
+                    callImage.paste(addedKan, (rightSide - tile_height, bottomSide - tile_width * 2, rightSide, bottomSide))
+                    index = index - 5
+                    rightSide = rightSide - tile_height
+                elif call[index-2] in ["c", "m", "p"]: # pon, chii, daiminkan
+                    tile = tileDict[call[index-1:index+1]]
                     rotatedTile = tile.rotate(270,expand=True)
-                    callImage.paste(rotatedTile, (leftSide, topSide + tile_width, leftSide + tile_height, topSide + tile_width * 2))
-                    index = index + 3
-                    leftSide = leftSide + tile_height
-                elif call[index] == "k" and index == 6: # ankan
-                    callImage.paste(tileDict["ct"], (leftSide, topSide + tile_width * 2 - tile_height, leftSide + tile_width, topSide + tile_width * 2))
-                    callImage.paste(tileDict["ct"], (0, topSide + tile_height, tile_width, topSide + tile_height * 2))
-                    index = index + 3
-                    leftSide = leftSide + tile_width
+                    callImage.paste(rotatedTile, (rightSide - tile_height, bottomSide - tile_width, rightSide, bottomSide))
+                    index = index - 3
+                    rightSide = rightSide - tile_height
+                elif call[index-2] == "a": # ankan
+                    callImage.paste(tileDict["ct"], (rightSide - tile_width, bottomSide - tile_height, rightSide, bottomSide))
+                    callImage.paste(tileDict[call[index-1:index+1]], (rightSide - tile_width * 2, bottomSide - tile_height, rightSide - tile_width, bottomSide))
+                    callImage.paste(tileDict[call[index-1:index+1]], (rightSide - tile_width * 3, bottomSide - tile_height, rightSide - tile_width * 2, bottomSide))
+                    callImage.paste(tileDict["ct"], (rightSide - tile_width * 4, bottomSide - tile_height, rightSide - tile_width * 3, bottomSide))
+                    #callImage.paste(tileDict["ct"], (leftSide, topSide + tile_width * 2 - tile_height, leftSide + tile_width, topSide + tile_width * 2))
+                    #callImage.paste(tileDict["ct"], (0, topSide + tile_height, tile_width, topSide + tile_height * 2))
+                    index = index - 9
+                    rightSide = rightSide - (tile_width * 4)
             else: # noncalled tile
-                callImage.paste(tileDict[call[index:index+2]], (leftSide, topSide + tile_width * 2 - tile_height, leftSide + tile_width, topSide + tile_width * 2))
-                index = index + 2
-                leftSide = leftSide + tile_width
+                callImage.paste(tileDict[call[index-1:index+1]], (rightSide - tile_width, bottomSide - tile_height, rightSide, bottomSide))
+                index = index - 2
+                rightSide = rightSide - tile_width
         callIndex = callIndex + 1
 
     return callImage
