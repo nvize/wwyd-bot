@@ -5,7 +5,7 @@ import json
 import sys
 import argparse
 
-test = 1
+test = 0
 noRoundOrTurnInput = 0
 filePath = 0
 kyoku = 0
@@ -19,7 +19,7 @@ args = parser.parse_args()
 
 if test == 0:
     try:
-        filepath = args.filepath
+        filePath = args.filepath
     except:
         print("MISSING_FILE! mark for testing?")
 else:
@@ -48,14 +48,16 @@ for line in gameStateData:
     jsonLine = jsonLine + line
 game = json.loads(jsonLine)
 
-writeToFile = 0
+writeToFile = 2
 
 if writeToFile == 1:
     name = str(random.randint(1000000000, 9999999999))
     writeFile = open(name + ".json", "w")
     writeFile.write(jsonLine)
     print(name + " round:" + str(kyoku) + " turn:" + str(turn))
-
+elif writeToFile == 2:
+    writeFile = open("randWWYD.json", "w")
+    writeFile.write(jsonLine)
 base64image = createGameStatePicture.createGameStatePictureFunc(game)
 
 #print("ok")

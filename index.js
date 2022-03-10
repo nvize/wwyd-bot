@@ -9,6 +9,7 @@ const mongo = require('./mongo.js')
 const mongoose = require('mongoose')
 
 const akochanProblems = fs.readdirSync('./akochans');
+const gameLogs = fs.readdirSync('./games');
 
 // When the client is ready, run this code (only once)
 client.once('ready', async () => {
@@ -42,17 +43,18 @@ client.on("messageCreate", async (message) => {
         async function whateves(gameImageBase64) {
             let sfbuff = new Buffer.from(gameImageBase64, 'base64');
             let rows = [];
-            for (let x in game.hand) {
+            for (let x in game.potentialDiscards) {
                 if (x % 5 == 0)
                     rows.push(new MessageActionRow())
                 rows[Math.floor(x/5)].addComponents(
                     new MessageButton()
 					.setCustomId(x)
-					.setLabel(game.hand[x])
+					.setLabel(game.potentialDiscards[x])
 					.setStyle('PRIMARY')
                 );
             }
-            let problemReply = await message.reply({ content: `Puzzle name: ${game.name}. You are ${game.seat}. Dora indicator: ${game.doraInd}. WWYD? You have 30 seconds to answer!`, files: [{ attachment: sfbuff }], components:[rows[0], rows[1], rows[2]] });
+            //let actionRows = [rows[0], rows[1]];
+            let problemReply = await message.reply({ content: `Puzzle name: ${game.name}. You are ${game.seat}. Dora indicator: ${game.doraInd}. WWYD? You have 30 seconds to answer!`, files: [{ attachment: sfbuff }], components:rows });
             const filter = i => {
                 i.deferUpdate();
                 return i.user === user;
@@ -60,7 +62,8 @@ client.on("messageCreate", async (message) => {
             let answer = await message.channel.awaitMessageComponent({ filter, componentType: 'BUTTON', max: 1, time: 30_000 })
                 .catch(err => console.log(`No interactions were collected.`));
             rows.forEach(row => row.components.forEach(button => button.setDisabled(true)))
-            problemReply.edit({ content: `Puzzle name: ${game.name}. You are ${game.seat}. Dora indicator: ${game.doraInd}. WWYD? You have 30 seconds to answer!`, files: [{ attachment: sfbuff }], components:[rows[0], rows[1], rows[2]] });
+            //actionRows = [rows[0], rows[1]];
+            problemReply.edit({ content: `Puzzle name: ${game.name}. You are ${game.seat}. Dora indicator: ${game.doraInd}. WWYD? You have 30 seconds to answer!`, files: [{ attachment: sfbuff }], components:rows });
             if (answer == null) {
                 message.reply(`Times up!.\n`
                     + `The best discards were: ${game.bestDiscards}\n`
@@ -85,27 +88,74 @@ client.on("messageCreate", async (message) => {
             }            
         }
     } else if (message.content.toLowerCase() == "!test") {
-        let filePath = "./2_2_2022_Silver_Room_East_akochan.json";
+        let user = message.author;
+        //let filePath = `./games/${gameLogs[Math.floor(Math.random() * gameLogs.length)]}`;
+        let filePath = `./games/3_3_2022_Gold_Room_South.json`
         let rawFileData = fs.readFileSync(filePath);
         let fileData = JSON.parse(rawFileData)
         let numOfRounds = Object.keys(fileData.kyokus).length - 1;
         let round = Math.floor(Math.random() * numOfRounds);
         let numOfTurns = fileData.kyokus[round].entries[fileData.kyokus[round].entries.length - 1].junme;
-        let turn =  4 + Math.floor(Math.random() * (numOfTurns - 4));
+        let turn =  6 + Math.floor(Math.random() * (numOfTurns - 6));
         console.log(String(round))
         console.log(String(turn))
-        let pythonProcess = spawn('py', ["./generateRandomWWYDProblem.py", 1, round, turn])
+        let pythonProcess = spawn('py', ["./generateRandomWWYDProblem.py", filePath, round, turn])
         let gameImageBase64 = '';
         pythonProcess.stdout.on('data', (data) => {
             gameImageBase64 += data;
         });
         pythonProcess.on('close', function (code) {
-            testFunc(gameImageBase64);
+            whateves(gameImageBase64);
         });
 
-        async function testFunc(gameImageBase64) {
+        async function whateves(gameImageBase64) {
+            let gamefile = fs.readFileSync("./randWWYD.json");
+            let game2 = JSON.parse(gamefile)
             let sfbuff = new Buffer.from(gameImageBase64, 'base64');
-            let problemReply = await message.reply({ content: `round: ${round}, turn: ${turn}`, files: [{ attachment: sfbuff }]});
+            let rows = [];
+            for (let x in game2.potentialDiscards) {
+                if (x % 5 == 0)
+                    rows.push(new MessageActionRow())
+                rows[Math.floor(x/5)].addComponents(
+                    new MessageButton()
+					.setCustomId(x)
+					.setLabel(game2.potentialDiscards[x])
+					.setStyle('PRIMARY')
+                );
+            }
+            //let actionRows = [rows[0], rows[1]];
+            let problemReply = await message.reply({ content: `${filePath}. Round: ${round}. Turn: ${turn}. Puzzle name: ${game2.name}. You are ${game2.seat}. Dora indicator: ${game2.doraInd}. WWYD? You have 30 seconds to answer!`, files: [{ attachment: sfbuff }], components:rows });
+            const filter = i => {
+                i.deferUpdate();
+                return i.user === user;
+            };
+            let answer = await message.channel.awaitMessageComponent({ filter, componentType: 'BUTTON', max: 1, time: 30_000 })
+                .catch(err => console.log(`No interactions were collected.`));
+            rows.forEach(row => row.components.forEach(button => button.setDisabled(true)))
+            //actionRows = [rows[0], rows[1]];
+            problemReply.edit({ content: `${filePath}. Round: ${round}. Turn: ${turn}. Puzzle name: ${game2.name}. You are ${game2.seat}. Dora indicator: ${game2.doraInd}. WWYD? You have 30 seconds to answer!`, files: [{ attachment: sfbuff }], components:rows });
+            if (answer == null) {
+                message.reply(`Times up!.\n`
+                    + `The best discards were: ${game2.bestDiscards}\n`
+                    + `Their EVs were: ${game2.evs}`);
+            } else {
+                let ranking = game2.bestDiscards.indexOf(answer.component.label);
+                console.log(answer.component.label);
+                console.log(ranking);
+                let responseIntro = `You said ${answer.component.label}. `;
+                if (ranking > -1) {
+                    if (ranking === 0) {
+                        responseIntro = responseIntro + `That was the best discard! You earned 5 akocoins!`;
+                    } else if (ranking === 4) {
+                        responseIntro = responseIntro + `That was the number 5 discard! You earned 1 akocoin!`;
+                    } else {
+                        responseIntro = responseIntro + `That was the number ${ranking + 1} discard! You earned ${5 - ranking} akocoins!`;
+                    }
+                }
+                message.reply(`${responseIntro}\n`
+                    + `The best discards were: ${game2.bestDiscards}\n`
+                    + `Their EVs were: ${game2.evs}`);
+            }            
         }
     }
 });
