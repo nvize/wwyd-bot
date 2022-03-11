@@ -50,7 +50,7 @@ def writeWWYDBotJson(data, kyoku, turn, name):
         roundPointsIndex = roundPointsIndex + 1
     jsonString.append("\t\"points\": "  + str(startingPoints) + ",\n")
 
-    # determine entry number in json file. if target player chi/pon this turn, take highest turn less than target turn (skips target turn)
+    # determine entry number in json file. if target player chi/pon this turn, take highest turn less than target turn
     found = False
     entryNum = -1
     for index, entry in enumerate(data['kyokus'][kyoku]['entries']):
@@ -59,8 +59,6 @@ def writeWWYDBotJson(data, kyoku, turn, name):
         if int(entry['junme']) == turn and not found:
             entryNum = index
             found = True
-
-    #print(entryNum)
 
     log = data['splited_logs'][kyoku]['log'][0]
 
@@ -88,14 +86,12 @@ def writeWWYDBotJson(data, kyoku, turn, name):
         finalCalls[winds[addWindIndex]] = []
         addWindIndex = addWindIndex + 1
 
-    numOfKans = 0
-    numOfKansOfPersonBefore = 0
+    numOfKans = 0 # determines number of dora indicators
+    numOfKansOfPersonBefore = 0 # current logic stops based on number of discards of wind before. ankan counts as a discard, but doesn't advance the wind
     currDiscardWindNum = 0
     posOffset = 0
-    if playerWind == "south":
-        posOffset = 0 # can delete, was based off a wrong observation
-    elif playerWind == "east":
-        posOffset = -1
+    if playerWind == "east":
+        posOffset = -1 # because east goes first
     while numOfDiscards[winds[(playerWindNum - 1) % 4]] < turn + posOffset + numOfKansOfPersonBefore:
 
         currDiscardWind = winds[currDiscardWindNum]
@@ -106,13 +102,13 @@ def writeWWYDBotJson(data, kyoku, turn, name):
             isRiichi = True
             currDiscard = int(currDiscard[1:])
 
-        if currDiscard == 60:
+        if currDiscard == 60: # tsumogiri
             currDiscard = draws[currDiscardWind][numOfDiscards[currDiscardWind]]
 
         # check draw arrays for other winds to determine if tile was called
         discardWasCalled = False
         for wind in winds:
-            if isinstance(draws[wind][numOfDiscards[wind]],str) and str(currDiscard) in draws[wind][numOfDiscards[wind]]:
+            if not wind == currDiscardWind and isinstance(draws[wind][numOfDiscards[wind]],str) and str(currDiscard) in draws[wind][numOfDiscards[wind]]:
                 replacedTileCall = draws[wind][numOfDiscards[wind]]
                 if(replacedTileCall[0] == "c"):
                     chiiTileCall = "c"
@@ -123,7 +119,7 @@ def writeWWYDBotJson(data, kyoku, turn, name):
                     #replacedTileCall = draws[wind][numOfDiscards[wind]].replace(draws[wind][numOfDiscards[wind]][-2:], tileDict[int(draws[wind][numOfDiscards[wind]][-2:])])
 
                     #following code cuts call in half at alpha char indicating type of call, replacing both halves with 'standard' formatting for tiles
-                    #you'll see this reused in other parts of this file, considering functionizing it
+                    #you'll see this reused in other parts of this file, consider functionizing it
                     callTypeIndex = replacedTileCall.find(next(filter(str.isalpha, replacedTileCall)))
                     firstHalf = replacedTileCall[0:callTypeIndex]
                     secondHalf = replacedTileCall[callTypeIndex+1:]
@@ -135,22 +131,27 @@ def writeWWYDBotJson(data, kyoku, turn, name):
                         secondHalfReplaced = secondHalfReplaced + tileDict[int(secondHalf[i] + secondHalf[i + 1])]
                     finalTileCall = firstHalfReplaced + replacedTileCall[callTypeIndex] + secondHalfReplaced
                     replacedTileCall = finalTileCall
+                    #??? how do i do this (ponning counts as a turn if east??? idk)
+                    if wind == playerWind:
+                        numOfKansOfPersonBefore = numOfKansOfPersonBefore-1
                 finalCalls[wind].append(replacedTileCall)
                 discardWasCalled = True
                 currDiscardWindNum = winds.index(wind)
-                if len(draws[wind][numOfDiscards[wind]]) > 8:
+                if len(draws[wind][numOfDiscards[wind]]) > 8: # called kan (daiminkan)
                     numOfKans = numOfKans + 1
                     numOfDiscards[wind] = numOfDiscards[wind] + 1
                     
-        # added kan logic
+        # added kan logic (shouminkan)
         if isinstance(currDiscard,str) and len(currDiscard) > 8 and contains(currDiscard, 'k'):
             discardWasCalled = True
             kanTile = tileDict[int(currDiscard[-2:])]
             kanTiles = kanTile
-            if kanTile[0] == '5':
+            if kanTile[0] == '5': # need this since red 5's and normal 5's are functionally the same
                 kanTiles = [kanTile, '0' + kanTile[1]]
             if kanTile[0] == '0':
                 kanTiles = [kanTile, '5' + kanTile[1]]
+            
+            # turn this into a function!
             callTypeIndex = currDiscard.find(next(filter(str.isalpha, currDiscard)))
             firstHalf = currDiscard[0:callTypeIndex]
             secondHalf = currDiscard[callTypeIndex+1:]
@@ -162,6 +163,7 @@ def writeWWYDBotJson(data, kyoku, turn, name):
                 secondHalfReplaced = secondHalfReplaced + tileDict[int(secondHalf[i] + secondHalf[i + 1])]
             finalTileCall = firstHalfReplaced + currDiscard[callTypeIndex] + secondHalfReplaced
             replacedTileCall = finalTileCall
+            
             addedKanFinalCalls = []
             for tileCall in finalCalls[currDiscardWind]:
                 if any(kTile in tileCall for kTile in kanTiles):
@@ -169,10 +171,14 @@ def writeWWYDBotJson(data, kyoku, turn, name):
                 else:
                     addedKanFinalCalls.append(tileCall)
             finalCalls[currDiscardWind] = addedKanFinalCalls
+            if currDiscardWind != playerWind: # added kan in player turn doesn't flip dora indicator until discard occurs
+                numOfKans = numOfKans + 1
 
         #closed kan logic
         if isinstance(currDiscard,str) and len(currDiscard) > 8 and contains(currDiscard, 'a'):
             discardWasCalled = True
+
+            #functionalize!
             callTypeIndex = currDiscard.find(next(filter(str.isalpha, currDiscard)))
             firstHalf = currDiscard[0:callTypeIndex]
             secondHalf = currDiscard[callTypeIndex+1:]
@@ -183,9 +189,13 @@ def writeWWYDBotJson(data, kyoku, turn, name):
             for i in range(0, len(secondHalf), 2):
                 secondHalfReplaced = secondHalfReplaced + tileDict[int(secondHalf[i] + secondHalf[i + 1])]
             finalTileCall = firstHalfReplaced + currDiscard[callTypeIndex] + secondHalfReplaced
+            
             finalCalls[currDiscardWind].append(finalTileCall)
+            numOfKans = numOfKans + 1
             if (winds.index(currDiscardWind) + 1) % 4 == playerWindNum:
                 numOfKansOfPersonBefore = numOfKansOfPersonBefore + 1
+            if currDiscardWind == playerWind:
+                numOfKansOfPersonBefore = numOfKansOfPersonBefore - 1
 
         if not discardWasCalled:
             if isRiichi:
@@ -201,7 +211,7 @@ def writeWWYDBotJson(data, kyoku, turn, name):
     tilesLeft = tilesLeft - numOfKans
     jsonString.append("\t\"tilesLeft\": " + str(tilesLeft) + ",\n")
 
-    playerHandBefore = data['kyokus'][kyoku]['entries'][entryNum]['state']['tehai']
+    playerHandBefore = data['kyokus'][kyoku]['entries'][entryNum]['state']['tehai'] # tiles in hand
     playerHandAfter = []
     if data['kyokus'][kyoku]['entries'][entryNum]['junme'] == turn:
         for tile in playerHandBefore:
@@ -229,7 +239,7 @@ def writeWWYDBotJson(data, kyoku, turn, name):
 
     potentialDiscards = []
     skipped = False
-    potentialDiscardsFromEntry = data['kyokus'][kyoku]['entries'][entryNum]['details']
+    potentialDiscardsFromEntry = data['kyokus'][kyoku]['entries'][entryNum]['details'] # potential discards
     for potentialDiscard in potentialDiscardsFromEntry:
         skipped = False
         actualPotentialDiscard = 0
@@ -243,7 +253,7 @@ def writeWWYDBotJson(data, kyoku, turn, name):
             if discardTile in tileDict.keys():
                 discardTile = tileDict[discardTile]
             actualPotentialDiscard = "r" + discardTile
-        elif potentialDiscard['moves'][0]['type'] == "chi":
+        elif potentialDiscard['moves'][0]['type'] == "chi" or potentialDiscard['moves'][0]['type'] == "pon":
             discardTile = potentialDiscard['moves'][1]['pai']
             if discardTile in tileDict.keys():
                 discardTile = tileDict[discardTile]
@@ -265,7 +275,7 @@ def writeWWYDBotJson(data, kyoku, turn, name):
     bestDiscards = []
     bestDiscardsEV = []
     skipped = False
-    bestDiscardsFromEntry = data['kyokus'][kyoku]['entries'][entryNum]['details'][0:5]
+    bestDiscardsFromEntry = data['kyokus'][kyoku]['entries'][entryNum]['details'][0:5] # top 5 discards
     for bestDiscard in bestDiscardsFromEntry:
         skipped = False
         actualDiscard = 0
@@ -279,7 +289,7 @@ def writeWWYDBotJson(data, kyoku, turn, name):
             if discardTile in tileDict.keys():
                 discardTile = tileDict[discardTile]
             actualDiscard = "r" + discardTile
-        elif bestDiscard['moves'][0]['type'] == "chi":
+        elif bestDiscard['moves'][0]['type'] == "chi" or bestDiscard['moves'][0]['type'] == "pon":
             discardTile = bestDiscard['moves'][1]['pai']
             if discardTile in tileDict.keys():
                 discardTile = tileDict[discardTile]

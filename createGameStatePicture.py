@@ -68,7 +68,10 @@ def createTileCalls(tileCalls):
                     rightSide = rightSide - tile_height
                 elif call[index-2] == "a": # ankan
                     callImage.paste(tileDict["ct"], (rightSide - tile_width, bottomSide - tile_height, rightSide, bottomSide))
-                    callImage.paste(tileDict[call[index-4:index-2]], (rightSide - tile_width * 2, bottomSide - tile_height, rightSide - tile_width, bottomSide))
+                    if call[index-1:index] == "0":
+                        callImage.paste(tileDict[call[index-1:index+1]], (rightSide - tile_width * 2, bottomSide - tile_height, rightSide - tile_width, bottomSide))
+                    else:
+                        callImage.paste(tileDict[call[index-4:index-2]], (rightSide - tile_width * 2, bottomSide - tile_height, rightSide - tile_width, bottomSide))
                     callImage.paste(tileDict[call[index-6:index-4]], (rightSide - tile_width * 3, bottomSide - tile_height, rightSide - tile_width * 2, bottomSide))
                     callImage.paste(tileDict["ct"], (rightSide - tile_width * 4, bottomSide - tile_height, rightSide - tile_width * 3, bottomSide))
                     #callImage.paste(tileDict["ct"], (leftSide, topSide + tile_width * 2 - tile_height, leftSide + tile_width, topSide + tile_width * 2))

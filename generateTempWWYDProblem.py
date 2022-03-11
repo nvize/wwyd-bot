@@ -60,6 +60,10 @@ elif writeToFile == 2:
     writeFile.write(jsonLine)
 base64image = createGameStatePicture.createGameStatePictureFunc(game)
 
-#print("ok")
-print(base64image)
-sys.stdout.flush()
+printOut = 1
+if printOut:
+    print(base64image)
+    sys.stdout.flush()
+else:
+    writeFile2 = open("picture.txt", "w")
+    writeFile2.write(base64image)

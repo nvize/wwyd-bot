@@ -28,8 +28,10 @@ client.on("messageCreate", async (message) => {
     if (message.author.bot) return false;
     if (message.content.toLowerCase() == "!akochan") {
         let user = message.author;
-        let gameFilepath = `./akochans/${akochanProblems[Math.floor(Math.random() * akochanProblems.length)]}`;
-        let game = require(gameFilepath);
+        //let gameFilepath = `./akochans/${akochanProblems[Math.floor(Math.random() * akochanProblems.length)]}`;
+        let gameFilepath = `./randWWYD.json`
+        let rawGameFilepathData = fs.readFileSync(gameFilepath);
+        let game = JSON.parse(rawGameFilepathData);
         let gameImageBase64 = '';
         let pythonProcess = spawn('py', ["./createGameStatePicture.py", gameFilepath, "filepath"])
         pythonProcess.stdout.on('data', (data) => {
@@ -99,7 +101,7 @@ client.on("messageCreate", async (message) => {
         let turn =  6 + Math.floor(Math.random() * (numOfTurns - 6));
         console.log(String(round))
         console.log(String(turn))
-        let pythonProcess = spawn('py', ["./generateRandomWWYDProblem.py", filePath, round, turn])
+        let pythonProcess = spawn('py', ["./generateTempWWYDProblem.py", filePath, round, turn])
         let gameImageBase64 = '';
         pythonProcess.stdout.on('data', (data) => {
             gameImageBase64 += data;

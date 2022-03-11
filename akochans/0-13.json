@@ -1,0 +1,22 @@
+{
+	"name": "0-13",
+	"seat": "east",
+	"round": 0,
+	"repeats": 0,
+	"honba": 0,
+	"points": [25000, 25000, 25000, 25000],
+	"tilesLeft": 25,
+	"hand": ["3m", "3m", "3m", "4m", "4m", "6m", "6m", "1s", "4s", "4s", "4s", "7s", "7s", "4s"],
+	"eastDiscards": ["5z", "6z", "1s", "3z", "8m", "5m", "8p", "9p", "1m", "9p", "6z"],
+	"eastCalls": [],
+	"southDiscards": ["1m", "2z", "8p", "9p", "1z", "r9s", "9m", "2s", "5z", "6z", "5s"],
+	"southCalls": [],
+	"westDiscards": ["4z", "9p", "5z", "2s", "1p", "1z", "9m", "2m", "2m", "5z", "9m"],
+	"westCalls": [],
+	"northDiscards": ["3z", "1z", "5p", "6z", "2m", "1p", "2z", "2z", "1z", "2s", "2m", "5s"],
+	"northCalls": ["7z7zp7z"],
+	"doraInd": ["7p"],
+	"potentialDiscards": ["3m", "4m", "6m", "k4s", "1s", "4s", "7s"],
+	"bestDiscards": ["k4s", "1s", "4s", "3m", "4m"],
+	"evs": [0.6515, -2.4961, -2.7571, -7.6396, -8.281]
+}
