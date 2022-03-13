@@ -14,10 +14,17 @@ const gameLogs = fs.readdirSync('./games');
 
 var msgChannel
 var timerMessage
+var timerMessageEnd
 var timerMessageID
 var timerMessageData
 var timerMessageActive = false
 var timerMessageMap = new Map();
+//var timerMessageStart = 0 // local time offset, starting at 0:00
+//var timerMessageTime = `00 00 * * * *`
+//var timerMessageCutoff = `00 45 * * * *` // how long you have until the answer is revealed
+var timerMessageTime = `00 * * * * *`
+var timerMessageCutoff = `45 * * * * *`
+var timerMessageCheckAnswerButtonID
 
 // When the client is ready, run this code (only once)
 client.once('ready', async () => {
@@ -32,7 +39,7 @@ client.once('ready', async () => {
     })
 
     msgChannel = client.channels.cache.get(config.channelID)
-    timerMessage = new cron.CronJob('00,15,30,45 * * * * *', () => {
+    timerMessage = new cron.CronJob(timerMessageTime, () => {
         msgChannel.send("Hello!")
         timerMessageActive = true
         let filePath = `./games/3_3_2022_Gold_Room_South.json`
@@ -71,8 +78,44 @@ client.once('ready', async () => {
             //let actionRows = [rows[0], rows[1]];
             let problemReply = await msgChannel.send({ content: `${filePath}. Round: ${round}. Turn: ${turn}. Puzzle name: ${game2.name}. You are ${game2.seat}. Dora indicator: ${game2.doraInd}. WWYD? You have 30 seconds to answer!`, files: [{ attachment: sfbuff }], components:rows });
             timerMessageID = problemReply.id
+        } 
+    })
+    timerMessageEnd = new cron.CronJob(timerMessageCutoff, () => {
+        if (timerMessageActive) {
+            timerMessageActive = false
+            endTimerMessage()
+
+            //console.log("------------------------------------------")
+            //console.log(problemMessage)
+            //console.log("------------------------------------------")
+            //console.log(problemMessageContent)
+            //console.log("------------------------------------------")
+            //console.log(problemMessageButtons)
+            //console.log("------------------------------------------")
+            //console.log(problemMessageImage)
+            //console.log("------------------------------------------")
+
+
+            async function endTimerMessage() {
+                let problemMessage = await msgChannel.messages.fetch(timerMessageID)
+                let problemMessageContent = problemMessage.content
+                let problemMessageButtons = problemMessage.components
+                let problemMessageImage = problemMessage.attachments
+                await problemMessageButtons.forEach(row => row.components.forEach(button => button.setDisabled(true)))
+                problemMessage.edit({content: problemMessageContent, attachment: problemMessageImage.values(), components:problemMessageButtons})
+                let rows = new MessageActionRow()
+                rows.addComponents(
+                    new MessageButton()
+                        .setCustomId("checkAnswer")
+                        .setLabel("Check your answer!")
+                        .setStyle('PRIMARY')
+                );
+                let problemEndMsg = await msgChannel.send({content: `Times up!.\n`
+                        + `The best discards were: ${timerMessageData.bestDiscards}\n`
+                        + `Their EVs were: ${timerMessageData.evs}`, components:[rows]});
+                timerMessageID = problemEndMsg.id
+            }
         }
-        
     })
 });
 
@@ -109,6 +152,7 @@ client.on("messageCreate", async (message) => {
             }
             //let actionRows = [rows[0], rows[1]];
             let problemReply = await message.reply({ content: `Puzzle name: ${game.name}. You are ${game.seat}. Dora indicator: ${game.doraInd}. WWYD? You have 30 seconds to answer!`, files: [{ attachment: sfbuff }], components:rows });
+            console.log(problemReply)
             const filter = i => {
                 i.deferUpdate();
                 return i.user === user;
@@ -213,9 +257,12 @@ client.on("messageCreate", async (message) => {
         }
     } else if (message.content.toLowerCase() == "!crontest") { 
         timerMessage.start()
+        timerMessageEnd.start()
         console.log("started timed messages")
     } else if (message.content.toLowerCase() == "!cronstop") { 
         timerMessage.stop()
+        timerMessageEnd.stop()
+        timerMessageActive = false
         console.log("stopped timed messages")
     }
 });
@@ -223,23 +270,16 @@ client.on("messageCreate", async (message) => {
 client.on('interactionCreate', async interaction => {
 	if (!interaction.isButton()) return;
     if (interaction.message.id != timerMessageID) return;
-	timerMessageMap.set(interaction.user.id, interaction.customId)
-    let ranking = timerMessageData.bestDiscards.indexOf(timerMessageData.potentialDiscards[parseInt(interaction.customId)]);
-    console.log(timerMessageData.potentialDiscards[parseInt(interaction.customId)]);
-    console.log(ranking);
-    let responseIntro = `You said ${timerMessageData.potentialDiscards[parseInt(interaction.customId)]}. `;
-    if (ranking > -1) {
-         if (ranking === 0) {
-            responseIntro = responseIntro + `That was the best discard! You earned 5 akocoins!`;
-        } else if (ranking === 4) {
-                        responseIntro = responseIntro + `That was the number 5 discard! You earned 1 akocoin!`;
-        } else {
-                        responseIntro = responseIntro + `That was the number ${ranking + 1} discard! You earned ${5 - ranking} akocoins!`;
-        }
+    if (interaction.customId == "checkAnswer") {
+        await interaction.reply({content: `You voted for ${timerMessageData.potentialDiscards[timerMessageMap[interaction.user.id]]}.`, ephemeral: true});
+    } else if (timerMessageMap.has(interaction.user.id) && timerMessageMap[interaction.user.id] != interaction.customId) {
+        timerMessageMap[interaction.user.id] = interaction.customId
+        await interaction.reply({content: `You changed your vote from ${await timerMessageData.potentialDiscards[timerMessageMap[interaction.user.id]]}, to `
+            + `${timerMessageData.potentialDiscards[parseInt(interaction.customId)]}.`, ephemeral: true});
+    } else {
+        timerMessageMap[interaction.user.id] = interaction.customId
+        await interaction.reply({content: `You voted for ${timerMessageData.potentialDiscards[parseInt(interaction.customId)]}.`, ephemeral: true});
     }
-    await interaction.reply({content: `${responseIntro}\n`
-    + `The best discards were: ${timerMessageData.bestDiscards}\n`
-    + `Their EVs were: ${timerMessageData.evs}`, ephemeral: true});
     return;
 });
 
