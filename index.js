@@ -20,11 +20,12 @@ var timerMessageData
 var timerMessageActive = false
 var timerMessageMap = new Map();
 //var timerMessageStart = 0 // local time offset, starting at 0:00
-//var timerMessageTime = `00 00 * * * *`
-//var timerMessageCutoff = `00 45 * * * *` // how long you have until the answer is revealed
 var timerMessageTime = `00 * * * * *`
-var timerMessageCutoff = `45 * * * * *`
+var timerMessageCutoff = `45 * * * * *` // how long you have until the answer is revealed
+//var timerMessageTime = `00 00 10 * * *`
+//var timerMessageCutoff = `00 00 18 * * *`
 var timerMessageCheckAnswerButtonID
+var timerMessageFilePath = `./games/${gameLogs[Math.floor(Math.random() * gameLogs.length)]}`;
 
 // When the client is ready, run this code (only once)
 client.once('ready', async () => {
@@ -42,14 +43,15 @@ client.once('ready', async () => {
     timerMessage = new cron.CronJob(timerMessageTime, () => {
         msgChannel.send("Hello!")
         timerMessageActive = true
-        let filePath = `./games/3_3_2022_Gold_Room_South.json`
-        let rawFileData = fs.readFileSync(filePath);
+        timerMessageFilePath = `./games/${gameLogs[Math.floor(Math.random() * gameLogs.length)]}`;
+        console.log(timerMessageFilePath)
+        let rawFileData = fs.readFileSync(timerMessageFilePath);
         let fileData = JSON.parse(rawFileData)
         let numOfRounds = Object.keys(fileData.kyokus).length - 1;
         let round = Math.floor(Math.random() * numOfRounds);
         let numOfTurns = fileData.kyokus[round].entries[fileData.kyokus[round].entries.length - 1].junme;
         let turn =  6 + Math.floor(Math.random() * (numOfTurns - 6));
-        let pythonProcess = spawn('py', ["./generateTempWWYDProblem.py", filePath, round, turn])
+        let pythonProcess = spawn('py', ["./generateTempWWYDProblem.py", timerMessageFilePath, round, turn])
         let gameImageBase64 = '';
         pythonProcess.stdout.on('data', (data) => {
             gameImageBase64 += data;
@@ -76,7 +78,7 @@ client.once('ready', async () => {
                 );
             }
             //let actionRows = [rows[0], rows[1]];
-            let problemReply = await msgChannel.send({ content: `${filePath}. Round: ${round}. Turn: ${turn}. Puzzle name: ${game2.name}. You are ${game2.seat}. Dora indicator: ${game2.doraInd}. WWYD? You have 30 seconds to answer!`, files: [{ attachment: sfbuff }], components:rows });
+            let problemReply = await msgChannel.send({ content: `${timerMessageFilePath}. Round: ${round}. Turn: ${turn}. Puzzle name: ${game2.name}. You are ${game2.seat}. Dora indicator: ${game2.doraInd}. WWYD? You have 30 seconds to answer!`, files: [{ attachment: sfbuff }], components:rows });
             timerMessageID = problemReply.id
         } 
     })
@@ -271,14 +273,25 @@ client.on('interactionCreate', async interaction => {
 	if (!interaction.isButton()) return;
     if (interaction.message.id != timerMessageID) return;
     if (interaction.customId == "checkAnswer") {
-        await interaction.reply({content: `You voted for ${timerMessageData.potentialDiscards[timerMessageMap[interaction.user.id]]}.`, ephemeral: true});
+        let ranking = timerMessageData.bestDiscards.indexOf(timerMessageData.potentialDiscards[timerMessageMap[interaction.user.id]]);
+        let responseIntro = ``;
+        if (ranking > -1) {
+            if (ranking === 0) {
+                responseIntro = responseIntro + `That was the best discard! You earned 5 akocoins!`;
+            } else if (ranking === 4) {
+                    responseIntro = responseIntro + `That was the number 5 discard! You earned 1 akocoin!`;
+            } else {
+                responseIntro = responseIntro + `That was the number ${ranking + 1} discard! You earned ${5 - ranking} akocoins!`;
+            }
+        }
+        await interaction.reply({content: `You voted for ${timerMessageData.potentialDiscards[timerMessageMap[interaction.user.id]]}. ${responseIntro}`, ephemeral: true});
     } else if (timerMessageMap.has(interaction.user.id) && timerMessageMap[interaction.user.id] != interaction.customId) {
-        timerMessageMap[interaction.user.id] = interaction.customId
-        await interaction.reply({content: `You changed your vote from ${await timerMessageData.potentialDiscards[timerMessageMap[interaction.user.id]]}, to `
+        await interaction.reply({content: `You changed your vote from ${timerMessageData.potentialDiscards[timerMessageMap[interaction.user.id]]}, to `
             + `${timerMessageData.potentialDiscards[parseInt(interaction.customId)]}.`, ephemeral: true});
+        timerMessageMap[interaction.user.id] = interaction.customId;
     } else {
-        timerMessageMap[interaction.user.id] = interaction.customId
         await interaction.reply({content: `You voted for ${timerMessageData.potentialDiscards[parseInt(interaction.customId)]}.`, ephemeral: true});
+        timerMessageMap[interaction.user.id] = interaction.customId;
     }
     return;
 });
