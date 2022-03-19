@@ -23,7 +23,15 @@ tileStrings = ["1m", "2m", "3m", "4m", "5m", "6m", "7m", "8m", "9m", "0m",
 tileDict = dict(zip(tenhouTiles, tileStrings))
 
 def writeWWYDBotJson(data, kyoku, turn, name):
+    '''
+    Takes in dictionary representing an akochan game log, round number, and turn number and generates dict (json) representing a wwyd problem
 
+    Parameters: data: dictionary representing an akochan game log
+                kyoku: round number
+                turn: turn number
+                name: wwyd problem name
+    Returns:    (json) dict representing a wwyd problem
+    '''
     jsonString = []
     jsonString.append("{\n\t\"name\": \"" + name + "\",\n")
 
@@ -37,6 +45,8 @@ def writeWWYDBotJson(data, kyoku, turn, name):
 
     jsonString.append("\t\"round\": " + str(rotations) + ",\n")
     jsonString.append("\t\"repeats\": " + str(repeats) + ",\n")
+
+    # missing ---> ??????
     jsonString.append("\t\"honba\": " + str(0) + ",\n") #???
 
     # determine point values at a round
@@ -312,9 +322,22 @@ def writeWWYDBotJson(data, kyoku, turn, name):
     return jsonString
 
 def getNumOfRounds(data):
+    '''
+    Takes in dictionary (usually loaded from json file) representing an akochan game log and returns the total number of rounds
+
+    Parameters: data: dictionary representing an akochan game log
+    Returns:    total number of rounds
+    '''
     return len(data['kyokus']) - 1
 
 def getNumOfTurns(data, kyoku):
+    '''
+    Takes in dictionary (usually loaded from json file) representing an akochan game log and a round number and returns the total number of turns (for the target player)
+
+    Parameters: data: dictionary representing an akochan game log
+                kyoku: round number
+    Returns:    total number of turns for target player of akochan game log
+    '''
     return data['kyokus'][kyoku]['entries'][-1]['junme']
 
 if __name__ == "__main__":
