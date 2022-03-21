@@ -5,7 +5,7 @@ import math
 from io import BytesIO
 import sys
 
-tile_images = Image.open('mahjong_tiles/tiles.png')
+tile_images = Image.open('./mahjong_tiles/tiles.png')
 xsize, ysize = tile_images.size
 tile_width = xsize // 10
 tile_height = ysize // 4
@@ -20,6 +20,12 @@ for index, name in enumerate(tile_names):
                                       (index % 10 + 1) * tile_width, (index // 10 + 1) * tile_height))
 
 def convertToBase64(image):
+    '''
+    Takes in Pillow (Python image library) object and returns it as a base 64 image.
+
+    Parameters: image: Pillow object
+    Returns:    string representing base 64 image
+    '''
     outputBuffer = BytesIO()
     image.save(outputBuffer, format='PNG')
     bgBase64Data = outputBuffer.getvalue()
@@ -27,6 +33,14 @@ def convertToBase64(image):
     return base64.b64encode(bgBase64Data).decode()
 
 def createTileCalls(tileCalls):
+    '''
+    Takes in array of strings representing tile calls and outputs a Pillow (Python image library) object.
+
+    Calls are arranged in 2x2 format, bottom-up, right-to-left.
+
+    Parameters: tileCalls: array of strings representing tile calls
+    Returns:    Pillow object (picture of tile calls)
+    '''
     tilesInRow1Calls = 0
     tilesInRow2Calls = 0
     for call in tileCalls:
@@ -87,6 +101,13 @@ def createTileCalls(tileCalls):
     return callImage
 
 def createTileGroup(tiles, rowSize):
+    '''
+    Takes in array of tiles and a number representing # of tiles per row and outputs a Pillow (Python image library) object.
+
+    Parameters: tiles: array of strings representing tiles
+                rowSize: number of tiles per row in tile group
+    Returns:    Pillow object (picture of tile group)
+    '''
     numOfRows = -(len(tiles) // -rowSize)
     tilePic = Image.new("RGBA", (tile_width * rowSize + (tile_height - tile_width), tile_height * numOfRows), (0, 0, 0, 0))
     
@@ -107,6 +128,12 @@ def createTileGroup(tiles, rowSize):
     return tilePic
 
 def createGameStatePictureFunc(game):
+    '''
+    Takes in dictionary (usually loaded from json file) representing a game state and returns a base 64 image of that game state
+
+    Parameters: game: dictionary representing a game state
+    Returns:    string represnting base 64 image of game state
+    '''
     tilePadding = math.floor(tile_height*0.2)
     boardImage = Image.new("RGBA", (8*tile_height + 11*tile_width + 3*tilePadding, 8*tile_height + 11*tile_width + 3*tilePadding), (0, 0, 0, 0))
 
@@ -170,7 +197,7 @@ if __name__ == "__main__":
         except:
             print("String/filepath marker not set!")
     else:
-        filePath = 'akochans/0-13.json' #testing line
+        filePath = '../akochans/0-13.json' #testing line
 
     game = {}
     if stringOrFilepath == 'filepath':
